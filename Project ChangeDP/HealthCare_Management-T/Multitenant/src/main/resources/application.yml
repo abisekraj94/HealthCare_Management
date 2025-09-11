@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: Product
+multitenant:
+  stores:
+    configurationstore:
+      defaults:
+        connectionString: jdbc:postgresql://localhost:5432/defaultdb
+      tenants:
+        - id: tenant-1
+          identifier: tenant-1
+          name: SIMS
+          connectionString: jdbc:postgresql://localhost:5432/tenant1db
+        - id: tenant-2
+          identifier: tenant-2
+          name: MIOT
+          connectionString: jdbc:postgresql://localhost:5432/tenant2db
+        - id: tenant-3
+          identifier: tenant-3
+          name: APOLLO
+          connectionString: jdbc:postgresql://localhost:5432/tenant2db

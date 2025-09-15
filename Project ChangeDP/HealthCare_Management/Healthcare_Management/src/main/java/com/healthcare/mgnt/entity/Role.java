@@ -1,19 +1,28 @@
 package com.healthcare.mgnt.entity;
+
 import jakarta.persistence.*;
-import org.hibernate.validator.constraints.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "roles")
-public class Role {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "role")
+public class Role extends Auditable {
     @Id
-    @GeneratedValue
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "role_id")
+    private Long roleId;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "name", nullable = false, unique = true, length = 50)
     private String name;
 
+    @Column(name = "description")
     private String description;
 
     @ManyToMany(mappedBy = "roles")
@@ -21,9 +30,10 @@ public class Role {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "role_permissions",
+        name = "role_permission_map",
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
-    private Set<Permission> permissions = new HashSet<>();
+    private Set<RolePermission> permissions = new HashSet<>();
+
 }

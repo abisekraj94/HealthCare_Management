@@ -1,4 +1,4 @@
-package com.multitenant;
+package com.multitenantlib;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

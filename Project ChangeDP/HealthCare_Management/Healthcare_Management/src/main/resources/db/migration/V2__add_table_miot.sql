@@ -1,3 +1,4 @@
+CREATE SCHEMA IF NOT EXISTS miot;
 -- 1. User
 CREATE TABLE miot."user" (
     user_id SERIAL PRIMARY KEY,
@@ -155,4 +156,3 @@ CREATE TABLE miot.document_management (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description TEXT
 );
-

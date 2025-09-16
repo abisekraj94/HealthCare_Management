@@ -1,0 +1,8 @@
+-- Rollback for V1__add_table_sims.sql
+DROP TABLE IF EXISTS user_role CASCADE;
+DROP TABLE IF EXISTS role_permission_map CASCADE;
+DROP TABLE IF EXISTS role_permission CASCADE;
+DROP TABLE IF EXISTS role CASCADE;
+DROP TABLE IF EXISTS "user" CASCADE;
+DROP TABLE IF EXISTS patient CASCADE;
+

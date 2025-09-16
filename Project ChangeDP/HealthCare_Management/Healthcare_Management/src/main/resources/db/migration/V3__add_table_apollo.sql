@@ -1,3 +1,4 @@
+CREATE SCHEMA IF NOT EXISTS apollo;
 -- 1. User
 CREATE TABLE apollo."user" (
     user_id SERIAL PRIMARY KEY,
@@ -155,4 +156,3 @@ CREATE TABLE apollo.document_management (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description TEXT
 );
-

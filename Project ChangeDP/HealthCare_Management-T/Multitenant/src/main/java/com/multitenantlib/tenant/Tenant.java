@@ -1,26 +1,40 @@
 package com.multitenantlib.tenant;
 
+import lombok.Data;
+
+/**
+ * Tenant represents a tenant entity in the multi-tenancy system.
+ * Contains identifying information, schema, and custom properties for each tenant.
+ */
+@Data
 public class Tenant {
+    /** Unique ID for the tenant. */
     private String id;
-    private String identifier; // e.g. sims, miot, apollo
+    /** Unique identifier for the tenant (e.g. sims, miot, apollo). */
+    private String identifier;
+    /** Display name of the tenant. */
     private String name;
-    private String connectionString; // optional - for extensibility
-    private String schema; // schema name (for per-schema strategy)
+    /** Optional connection string for extensibility. */
+    private String connectionString;
+    /** Schema name for per-schema strategy. */
+    private String schema;
+    /** Custom property for tenant-specific configuration. */
     private String aCustomProperty;
 
+    /**
+     * Default constructor for Tenant.
+     */
     public Tenant() {}
 
-    // getters / setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public String getIdentifier() { return identifier; }
-    public void setIdentifier(String identifier) { this.identifier = identifier; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getConnectionString() { return connectionString; }
-    public void setConnectionString(String connectionString) { this.connectionString = connectionString; }
-    public String getSchema() { return schema; }
-    public void setSchema(String schema) { this.schema = schema; }
-    public String getaCustomProperty() { return aCustomProperty; }
-    public void setaCustomProperty(String aCustomProperty) { this.aCustomProperty = aCustomProperty; }
+    /**
+     * Constructs a Tenant with identifier, name, and schema.
+     * @param identifier unique identifier
+     * @param name display name
+     * @param schema schema name
+     */
+    public Tenant(String identifier, String name, String schema) {
+        this.identifier = identifier;
+        this.name = name;
+        this.schema = schema;
+    }
 }

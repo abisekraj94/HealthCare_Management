@@ -1,37 +1,3 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: abisek
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-
-multitenant:
-  store:
-    type: in-memory # or profile
-  resolver:
-    type: header # or host
-
-
-# profile-based configuration example that a consumer app would place in its application.yml
-# multitenant:
-#   stores:
-#     configurationstore:
-#       defaults:
-#         connectionString: jdbc:postgresql://localhost:5432/postgres
-#       tenants:
-#         - id: unique-id-0ff4daf
-#           identifier: sims
-#           name: Sims Tenant
-#           schema: sims
-#           connectionString: jdbc:postgresql://localhost:5432/postgres
-#           aCustomProperty: VIP Customer
-#         - id: unique-id-ao41n44
-#           identifier: miot
-#           name: Miot Tenant
-#           schema: miot
-#           connectionString: jdbc:postgresql://localhost:5432/postgres
-
+  profiles:
+    active: test

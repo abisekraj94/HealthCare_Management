@@ -1,5 +1,6 @@
 package com.healthcare.mgnt.config;
 
+import com.multitenantlib.context.TenantContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,10 @@ import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Configuration class for multi-tenant data source and JPA setup.
+ * Sets up routing data source, entity manager, and transaction manager for tenant-aware operations.
+ */
 @Configuration
 @EnableJpaRepositories(
     basePackages = "com.healthcare.mgnt.repository",
@@ -37,6 +42,10 @@ public class DataSourceConfig {
     @Autowired
     private Environment env;
 
+    /**
+     * Creates the main DataSource bean with tenant routing logic.
+     * @return DataSource instance
+     */
     @Bean
     public DataSource dataSource() {
         DataSource defaultDataSource = buildDefaultDataSource();
@@ -44,7 +53,7 @@ public class DataSourceConfig {
         AbstractRoutingDataSource routingDataSource = new AbstractRoutingDataSource() {
             @Override
             protected Object determineCurrentLookupKey() {
-                return TenantContext.getTenantId();
+                return TenantContext.getCurrentTenant();
             }
         };
 
@@ -59,6 +68,10 @@ public class DataSourceConfig {
         return routingDataSource;
     }
 
+    /**
+     * Builds the default DataSource for fallback or single-tenant use.
+     * @return DataSource instance
+     */
     private DataSource buildDefaultDataSource() {
         return DataSourceBuilder.create()
                 .url(dbUrl)
@@ -74,6 +87,10 @@ public class DataSourceConfig {
         return buildDefaultDataSource();
     }
 
+    /**
+     * Configures the EntityManagerFactory for JPA operations.
+     * @return LocalContainerEntityManagerFactoryBean instance
+     */
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
@@ -90,8 +107,13 @@ public class DataSourceConfig {
         return em;
     }
 
+    /**
+     * Configures the transaction manager for JPA transactions.
+     * @param entityManagerFactory the JPA entity manager factory
+     * @return PlatformTransactionManager instance
+     */
     @Bean
-    public PlatformTransactionManager transactionManager(EntityManagerFactory emf) {
-        return new JpaTransactionManager(emf);
+    public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+        return new JpaTransactionManager(entityManagerFactory);
     }
 }

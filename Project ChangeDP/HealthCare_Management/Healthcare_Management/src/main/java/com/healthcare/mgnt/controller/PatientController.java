@@ -1,9 +1,9 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.config.TenantContext;
-import com.healthcare.mgnt.dto.PatientRequestDTO;
-import com.healthcare.mgnt.dto.PatientResponseDTO;
-import com.healthcare.mgnt.service.PatientService;
+import com.multitenantlib.context.TenantContext;
+import com.healthcare.mgnt.dto.PatientRequest;
+import com.healthcare.mgnt.dto.PatientResponse;
+import com.healthcare.mgnt.service.Implementation.PatientService;
 import com.healthcare.mgnt.constants.ApplicationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -39,28 +39,43 @@ public class PatientController {
         @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<PatientResponseDTO>> getAllPatients(@RequestParam(defaultValue = "0") int page,
-                                                                 @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
-        String tenant = TenantContext.getTenantId();
+    public ResponseEntity<Page<PatientResponse>> getAllPatients(@RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
+        String tenant = TenantContext.getCurrentTenant();
         logger.info("[Tenant: {}] Fetching all patients, page: {}, size: {}", tenant, page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PatientResponseDTO> patients = patientService.getAllPatients(pageable);
-        return ResponseEntity.ok(patients);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<PatientResponse> patients = patientService.getAllPatients(pageable);
+            return ResponseEntity.ok(patients);
+        } catch (Exception ex) {
+            logger.error("Error fetching patients: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
      * Get patient by ID.
      */
-    @Operation(summary = "Get patient by ID", description = "Returns a patient by their ID")
+    @Operation(summary = "Get patient by ID", description = "Returns a patient by its ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = ApplicationConstants.SUCCESSFUL_OPERATION),
         @ApiResponse(responseCode = "404", description = ApplicationConstants.PATIENT_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<PatientResponseDTO> getPatientById(@PathVariable Long id) {
-        logger.info("Fetching patient by id: {}", id);
-        PatientResponseDTO patient = patientService.getPatientById(id);
-        return ResponseEntity.ok(patient);
+    public ResponseEntity<PatientResponse> getPatientById(@PathVariable Long id) {
+        String tenant = TenantContext.getCurrentTenant();
+        logger.info("[Tenant: {}] Fetching patient by id: {}", tenant, id);
+        try {
+            PatientResponse patient = patientService.getPatientById(id);
+            if (patient == null) {
+                logger.warn("Patient not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(patient);
+        } catch (Exception ex) {
+            logger.error("Error fetching patient by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -72,10 +87,16 @@ public class PatientController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PostMapping
-    public ResponseEntity<PatientResponseDTO> createPatient(@Validated @RequestBody PatientRequestDTO requestDTO) {
-        logger.info("Creating new patient: {}", requestDTO.getMrn());
-        PatientResponseDTO createdPatient = patientService.createPatient(requestDTO);
-        return ResponseEntity.status(201).body(createdPatient);
+    public ResponseEntity<PatientResponse> createPatient(@Validated @RequestBody PatientRequest requestDTO) {
+        String tenant = TenantContext.getCurrentTenant();
+        logger.info("[Tenant: {}] Creating new patient", tenant);
+        try {
+            PatientResponse created = patientService.createPatient(requestDTO);
+            return ResponseEntity.status(201).body(created);
+        } catch (Exception ex) {
+            logger.error("Error creating patient: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -88,24 +109,36 @@ public class PatientController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<PatientResponseDTO> updatePatient(@PathVariable Long id, @Validated @RequestBody PatientRequestDTO requestDTO) {
-        logger.info("Updating patient id: {}", id);
-        PatientResponseDTO updatedPatient = patientService.updatePatient(id, requestDTO);
-        return ResponseEntity.ok(updatedPatient);
+    public ResponseEntity<PatientResponse> updatePatient(@PathVariable Long id, @Validated @RequestBody PatientRequest requestDTO) {
+        String tenant = TenantContext.getCurrentTenant();
+        logger.info("[Tenant: {}] Updating patient id: {}", tenant, id);
+        try {
+            PatientResponse updated = patientService.updatePatient(id, requestDTO);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            logger.error("Error updating patient id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
      * Delete a patient by ID.
      */
-    @Operation(summary = "Delete patient", description = "Deletes a patient by their ID")
+    @Operation(summary = "Delete patient", description = "Deletes a patient by its ID")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = ApplicationConstants.DELETED),
         @ApiResponse(responseCode = "404", description = ApplicationConstants.PATIENT_NOT_FOUND)
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePatient(@PathVariable Long id) {
-        logger.info("Deleting patient id: {}", id);
-        patientService.deletePatient(id);
-        return ResponseEntity.noContent().build();
+        String tenant = TenantContext.getCurrentTenant();
+        logger.info("[Tenant: {}] Deleting patient id: {}", tenant, id);
+        try {
+            patientService.deletePatient(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting patient id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

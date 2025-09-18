@@ -1,8 +1,8 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.dto.PatientVitalSignRequestDTO;
-import com.healthcare.mgnt.dto.PatientVitalSignResponseDTO;
-import com.healthcare.mgnt.service.PatientVitalSignService;
+import com.healthcare.mgnt.dto.PatientVitalSignRequest;
+import com.healthcare.mgnt.dto.PatientVitalSignResponse;
+import com.healthcare.mgnt.service.Implementation.PatientVitalSignService;
 import com.healthcare.mgnt.constants.ApplicationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,12 +38,17 @@ public class PatientVitalSignController {
         @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<PatientVitalSignResponseDTO>> getAllPatientVitalSigns(@RequestParam(defaultValue = "0") int page,
-                                                                                   @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
+    public ResponseEntity<Page<PatientVitalSignResponse>> getAllPatientVitalSigns(@RequestParam(defaultValue = "0") int page,
+                                                                                  @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
         logger.info("Fetching all patient vital signs, page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PatientVitalSignResponseDTO> vitalSigns = patientVitalSignService.getAllPatientVitalSigns(pageable);
-        return ResponseEntity.ok(vitalSigns);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<PatientVitalSignResponse> vitalSigns = patientVitalSignService.getAllPatientVitalSigns(pageable);
+            return ResponseEntity.ok(vitalSigns);
+        } catch (Exception ex) {
+            logger.error("Error fetching patient vital signs: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -55,10 +60,19 @@ public class PatientVitalSignController {
         @ApiResponse(responseCode = "404", description = ApplicationConstants.PATIENT_VITAL_SIGN_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<PatientVitalSignResponseDTO> getPatientVitalSignById(@PathVariable Long id) {
+    public ResponseEntity<PatientVitalSignResponse> getPatientVitalSignById(@PathVariable Long id) {
         logger.info("Fetching patient vital sign by id: {}", id);
-        PatientVitalSignResponseDTO vitalSign = patientVitalSignService.getPatientVitalSignById(id);
-        return ResponseEntity.ok(vitalSign);
+        try {
+            PatientVitalSignResponse vitalSign = patientVitalSignService.getPatientVitalSignById(id);
+            if (vitalSign == null) {
+                logger.warn("Patient vital sign not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(vitalSign);
+        } catch (Exception ex) {
+            logger.error("Error fetching patient vital sign by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -70,10 +84,15 @@ public class PatientVitalSignController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PostMapping
-    public ResponseEntity<PatientVitalSignResponseDTO> createPatientVitalSign(@Validated @RequestBody PatientVitalSignRequestDTO requestDTO) {
+    public ResponseEntity<PatientVitalSignResponse> createPatientVitalSign(@Validated @RequestBody PatientVitalSignRequest requestDTO) {
         logger.info("Creating new patient vital sign for patientId: {}", requestDTO.getPatientId());
-        PatientVitalSignResponseDTO created = patientVitalSignService.createPatientVitalSign(requestDTO);
-        return ResponseEntity.status(201).body(created);
+        try {
+            PatientVitalSignResponse created = patientVitalSignService.createPatientVitalSign(requestDTO);
+            return ResponseEntity.status(201).body(created);
+        } catch (Exception ex) {
+            logger.error("Error creating patient vital sign: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -86,10 +105,15 @@ public class PatientVitalSignController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<PatientVitalSignResponseDTO> updatePatientVitalSign(@PathVariable Long id, @Validated @RequestBody PatientVitalSignRequestDTO requestDTO) {
+    public ResponseEntity<PatientVitalSignResponse> updatePatientVitalSign(@PathVariable Long id, @Validated @RequestBody PatientVitalSignRequest requestDTO) {
         logger.info("Updating patient vital sign id: {}", id);
-        PatientVitalSignResponseDTO updated = patientVitalSignService.updatePatientVitalSign(id, requestDTO);
-        return ResponseEntity.ok(updated);
+        try {
+            PatientVitalSignResponse updated = patientVitalSignService.updatePatientVitalSign(id, requestDTO);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            logger.error("Error updating patient vital sign id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -103,7 +127,12 @@ public class PatientVitalSignController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePatientVitalSign(@PathVariable Long id) {
         logger.info("Deleting patient vital sign id: {}", id);
-        patientVitalSignService.deletePatientVitalSign(id);
-        return ResponseEntity.noContent().build();
+        try {
+            patientVitalSignService.deletePatientVitalSign(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting patient vital sign id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

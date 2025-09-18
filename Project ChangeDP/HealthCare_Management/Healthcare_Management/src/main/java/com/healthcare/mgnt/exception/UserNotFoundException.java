@@ -7,7 +7,7 @@ import com.healthcare.mgnt.constants.AppErrorCodes;
  */
 public class UserNotFoundException extends AppException {
     public UserNotFoundException() {
-        super(AppErrorCodes.USER_NOT_FOUND);
+        super(AppErrorCodes.USER_NOT_FOUND, "Failed to update patient medical history");
     }
 }
 

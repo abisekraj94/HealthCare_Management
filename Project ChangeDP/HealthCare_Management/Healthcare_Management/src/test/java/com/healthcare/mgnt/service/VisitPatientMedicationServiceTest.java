@@ -1,7 +1,7 @@
 package com.healthcare.mgnt.service;
 
-import com.healthcare.mgnt.dto.VisitPatientMedicationRequestDTO;
-import com.healthcare.mgnt.dto.VisitPatientMedicationResponseDTO;
+import com.healthcare.mgnt.dto.VisitPatientMedicationRequest;
+import com.healthcare.mgnt.dto.VisitPatientMedicationResponse;
 import com.healthcare.mgnt.entity.VisitPatientMedication;
 import com.healthcare.mgnt.entity.PatientVisit;
 import com.healthcare.mgnt.entity.User;
@@ -9,6 +9,7 @@ import com.healthcare.mgnt.repository.VisitPatientMedicationRepository;
 import com.healthcare.mgnt.repository.PatientVisitRepository;
 import com.healthcare.mgnt.repository.UserRepository;
 import com.healthcare.mgnt.exception.MedicationNotFoundException;
+import com.healthcare.mgnt.service.Implementation.VisitPatientMedicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.modelmapper.ModelMapper;
 
 import java.sql.Date;
 import java.util.Collections;
@@ -34,6 +36,8 @@ class VisitPatientMedicationServiceTest {
     private PatientVisitRepository patientVisitRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ModelMapper modelMapper;
 
     @InjectMocks
     private VisitPatientMedicationService service;
@@ -41,6 +45,53 @@ class VisitPatientMedicationServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        // Setup ModelMapper mock behavior for DTO/entity conversion
+        when(modelMapper.map(any(VisitPatientMedicationRequest.class), eq(VisitPatientMedication.class)))
+            .thenAnswer(invocation -> {
+                VisitPatientMedicationRequest dto = invocation.getArgument(0);
+                VisitPatientMedication entity = new VisitPatientMedication();
+                entity.setMedicationName(dto.getMedicationName());
+                entity.setDosage(dto.getDosage());
+                entity.setFrequency(dto.getFrequency());
+                entity.setRoute(dto.getRoute());
+                entity.setStartDate(dto.getStartDate());
+                entity.setEndDate(dto.getEndDate());
+                PatientVisit visit = new PatientVisit();
+                visit.setVisitId(dto.getVisitId());
+                entity.setVisit(visit);
+                User user = new User();
+                user.setUserId(dto.getPrescribedById());
+                entity.setPrescribedBy(user);
+                return entity;
+            });
+        // Fix: Use doAnswer for overloaded map method
+        doAnswer(invocation -> {
+            VisitPatientMedicationRequest dto = invocation.getArgument(0);
+            VisitPatientMedication entity = invocation.getArgument(1);
+            entity.setMedicationName(dto.getMedicationName());
+            entity.setDosage(dto.getDosage());
+            entity.setFrequency(dto.getFrequency());
+            entity.setRoute(dto.getRoute());
+            entity.setStartDate(dto.getStartDate());
+            entity.setEndDate(dto.getEndDate());
+            // Optionally update visit and prescribedBy if needed
+            return entity;
+        }).when(modelMapper).map(any(VisitPatientMedicationRequest.class), any(VisitPatientMedication.class));
+        when(modelMapper.map(any(VisitPatientMedication.class), eq(VisitPatientMedicationResponse.class)))
+            .thenAnswer(invocation -> {
+                VisitPatientMedication entity = invocation.getArgument(0);
+                VisitPatientMedicationResponse dto = new VisitPatientMedicationResponse();
+                dto.setMedicationId(entity.getMedicationId());
+                dto.setMedicationName(entity.getMedicationName());
+                dto.setDosage(entity.getDosage());
+                dto.setFrequency(entity.getFrequency());
+                dto.setRoute(entity.getRoute());
+                dto.setStartDate(entity.getStartDate());
+                dto.setEndDate(entity.getEndDate());
+                dto.setVisitId(entity.getVisit() != null ? entity.getVisit().getVisitId() : null);
+                dto.setPrescribedById(entity.getPrescribedBy() != null ? entity.getPrescribedBy().getUserId() : null);
+                return dto;
+            });
     }
 
     @Test
@@ -57,7 +108,7 @@ class VisitPatientMedicationServiceTest {
         med.setPrescribedBy(new User());
         Page<VisitPatientMedication> page = new PageImpl<>(Collections.singletonList(med));
         when(medicationRepository.findAll(any(Pageable.class))).thenReturn(page);
-        Page<VisitPatientMedicationResponseDTO> result = service.getAllVisitPatientMedications(PageRequest.of(0, 10));
+        Page<VisitPatientMedicationResponse> result = service.getAllVisitPatientMedications(PageRequest.of(0, 10));
         assertEquals(1, result.getTotalElements());
         assertEquals("Aspirin", result.getContent().get(0).getMedicationName());
     }
@@ -68,7 +119,7 @@ class VisitPatientMedicationServiceTest {
         med.setMedicationId(2L);
         med.setMedicationName("Ibuprofen");
         when(medicationRepository.findById(2L)).thenReturn(Optional.of(med));
-        VisitPatientMedicationResponseDTO dto = service.getVisitPatientMedicationById(2L);
+        VisitPatientMedicationResponse dto = service.getVisitPatientMedicationById(2L);
         assertEquals("Ibuprofen", dto.getMedicationName());
         assertEquals(2L, dto.getMedicationId());
     }
@@ -81,7 +132,7 @@ class VisitPatientMedicationServiceTest {
 
     @Test
     void testCreateVisitPatientMedication_Success() {
-        VisitPatientMedicationRequestDTO req = new VisitPatientMedicationRequestDTO();
+        VisitPatientMedicationRequest req = new VisitPatientMedicationRequest();
         req.setVisitId(1L);
         req.setMedicationName("Paracetamol");
         req.setDosage("500mg");
@@ -97,7 +148,7 @@ class VisitPatientMedicationServiceTest {
         when(patientVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
         when(userRepository.findById(10L)).thenReturn(Optional.of(user));
         when(medicationRepository.save(any(VisitPatientMedication.class))).thenAnswer(i -> i.getArgument(0));
-        VisitPatientMedicationResponseDTO dto = service.createVisitPatientMedication(req);
+        VisitPatientMedicationResponse dto = service.createVisitPatientMedication(req);
         assertEquals("Paracetamol", dto.getMedicationName());
         assertEquals("Twice daily", dto.getFrequency());
         assertEquals(1L, dto.getVisitId());
@@ -111,7 +162,7 @@ class VisitPatientMedicationServiceTest {
         med.setMedicationName("OldName");
         med.setVisit(new PatientVisit());
         med.setPrescribedBy(new User());
-        VisitPatientMedicationRequestDTO req = new VisitPatientMedicationRequestDTO();
+        VisitPatientMedicationRequest req = new VisitPatientMedicationRequest();
         req.setMedicationName("NewName");
         req.setDosage("250mg");
         req.setFrequency("Once");
@@ -120,14 +171,14 @@ class VisitPatientMedicationServiceTest {
         req.setEndDate(Date.valueOf("2023-03-10"));
         when(medicationRepository.findById(3L)).thenReturn(Optional.of(med));
         when(medicationRepository.save(any(VisitPatientMedication.class))).thenAnswer(i -> i.getArgument(0));
-        VisitPatientMedicationResponseDTO dto = service.updateVisitPatientMedication(3L, req);
+        VisitPatientMedicationResponse dto = service.updateVisitPatientMedication(3L, req);
         assertEquals("NewName", dto.getMedicationName());
         assertEquals("250mg", dto.getDosage());
     }
 
     @Test
     void testUpdateVisitPatientMedication_NotFound() {
-        VisitPatientMedicationRequestDTO req = new VisitPatientMedicationRequestDTO();
+        VisitPatientMedicationRequest req = new VisitPatientMedicationRequest();
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
         assertThrows(MedicationNotFoundException.class, () -> service.updateVisitPatientMedication(99L, req));
     }
@@ -145,4 +196,3 @@ class VisitPatientMedicationServiceTest {
         assertThrows(MedicationNotFoundException.class, () -> service.deleteVisitPatientMedication(99L));
     }
 }
-

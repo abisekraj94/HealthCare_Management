@@ -1,8 +1,8 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.dto.VisitPatientDiagnosisRequestDTO;
-import com.healthcare.mgnt.dto.VisitPatientDiagnosisResponseDTO;
-import com.healthcare.mgnt.service.VisitPatientDiagnosisService;
+import com.healthcare.mgnt.dto.VisitPatientDiagnosisRequest;
+import com.healthcare.mgnt.dto.VisitPatientDiagnosisResponse;
+import com.healthcare.mgnt.service.Implementation.VisitPatientDiagnosisService;
 import com.healthcare.mgnt.constants.ApplicationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,12 +38,17 @@ public class VisitPatientDiagnosisController {
         @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<VisitPatientDiagnosisResponseDTO>> getAllVisitPatientDiagnoses(@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<Page<VisitPatientDiagnosisResponse>> getAllVisitPatientDiagnoses(@RequestParam(defaultValue = "0") int page,
                                                                                            @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
         logger.info("Fetching all visit patient diagnoses, page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<VisitPatientDiagnosisResponseDTO> diagnoses = visitPatientDiagnosisService.getAllVisitPatientDiagnoses(pageable);
-        return ResponseEntity.ok(diagnoses);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<VisitPatientDiagnosisResponse> diagnoses = visitPatientDiagnosisService.getAllVisitPatientDiagnoses(pageable);
+            return ResponseEntity.ok(diagnoses);
+        } catch (Exception ex) {
+            logger.error("Error fetching visit patient diagnoses: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -52,13 +57,22 @@ public class VisitPatientDiagnosisController {
     @Operation(summary = "Get visit patient diagnosis by ID", description = "Returns a visit patient diagnosis by its ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = ApplicationConstants.SUCCESSFUL_OPERATION),
-        @ApiResponse(responseCode = "404", description = ApplicationConstants.DIAGNOSIS_NOT_FOUND)
+        @ApiResponse(responseCode = "404", description = ApplicationConstants.VISIT_PATIENT_DIAGNOSIS_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<VisitPatientDiagnosisResponseDTO> getVisitPatientDiagnosisById(@PathVariable Long id) {
+    public ResponseEntity<VisitPatientDiagnosisResponse> getVisitPatientDiagnosisById(@PathVariable Long id) {
         logger.info("Fetching visit patient diagnosis by id: {}", id);
-        VisitPatientDiagnosisResponseDTO diagnosis = visitPatientDiagnosisService.getVisitPatientDiagnosisById(id);
-        return ResponseEntity.ok(diagnosis);
+        try {
+            VisitPatientDiagnosisResponse diagnosis = visitPatientDiagnosisService.getVisitPatientDiagnosisById(id);
+            if (diagnosis == null) {
+                logger.warn("Visit patient diagnosis not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(diagnosis);
+        } catch (Exception ex) {
+            logger.error("Error fetching visit patient diagnosis by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -70,10 +84,15 @@ public class VisitPatientDiagnosisController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PostMapping
-    public ResponseEntity<VisitPatientDiagnosisResponseDTO> createVisitPatientDiagnosis(@Validated @RequestBody VisitPatientDiagnosisRequestDTO requestDTO) {
+    public ResponseEntity<VisitPatientDiagnosisResponse> createVisitPatientDiagnosis(@Validated @RequestBody VisitPatientDiagnosisRequest requestDTO) {
         logger.info("Creating new visit patient diagnosis for visitId: {}", requestDTO.getVisitId());
-        VisitPatientDiagnosisResponseDTO created = visitPatientDiagnosisService.createVisitPatientDiagnosis(requestDTO);
-        return ResponseEntity.status(201).body(created);
+        try {
+            VisitPatientDiagnosisResponse created = visitPatientDiagnosisService.createVisitPatientDiagnosis(requestDTO);
+            return ResponseEntity.status(201).body(created);
+        } catch (Exception ex) {
+            logger.error("Error creating visit patient diagnosis: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -82,14 +101,19 @@ public class VisitPatientDiagnosisController {
     @Operation(summary = "Update visit patient diagnosis", description = "Updates an existing visit patient diagnosis")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = ApplicationConstants.UPDATED),
-        @ApiResponse(responseCode = "404", description = ApplicationConstants.DIAGNOSIS_NOT_FOUND),
+        @ApiResponse(responseCode = "404", description = ApplicationConstants.VISIT_PATIENT_DIAGNOSIS_NOT_FOUND),
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<VisitPatientDiagnosisResponseDTO> updateVisitPatientDiagnosis(@PathVariable Long id, @Validated @RequestBody VisitPatientDiagnosisRequestDTO requestDTO) {
+    public ResponseEntity<VisitPatientDiagnosisResponse> updateVisitPatientDiagnosis(@PathVariable Long id, @Validated @RequestBody VisitPatientDiagnosisRequest requestDTO) {
         logger.info("Updating visit patient diagnosis id: {}", id);
-        VisitPatientDiagnosisResponseDTO updated = visitPatientDiagnosisService.updateVisitPatientDiagnosis(id, requestDTO);
-        return ResponseEntity.ok(updated);
+        try {
+            VisitPatientDiagnosisResponse updated = visitPatientDiagnosisService.updateVisitPatientDiagnosis(id, requestDTO);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            logger.error("Error updating visit patient diagnosis id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -98,12 +122,17 @@ public class VisitPatientDiagnosisController {
     @Operation(summary = "Delete visit patient diagnosis", description = "Deletes a visit patient diagnosis by its ID")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = ApplicationConstants.DELETED),
-        @ApiResponse(responseCode = "404", description = ApplicationConstants.DIAGNOSIS_NOT_FOUND)
+        @ApiResponse(responseCode = "404", description = ApplicationConstants.VISIT_PATIENT_DIAGNOSIS_NOT_FOUND)
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVisitPatientDiagnosis(@PathVariable Long id) {
         logger.info("Deleting visit patient diagnosis id: {}", id);
-        visitPatientDiagnosisService.deleteVisitPatientDiagnosis(id);
-        return ResponseEntity.noContent().build();
+        try {
+            visitPatientDiagnosisService.deleteVisitPatientDiagnosis(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting visit patient diagnosis id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

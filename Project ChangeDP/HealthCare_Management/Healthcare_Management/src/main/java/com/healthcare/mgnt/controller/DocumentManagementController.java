@@ -1,8 +1,8 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.dto.DocumentManagementRequestDTO;
-import com.healthcare.mgnt.dto.DocumentManagementResponseDTO;
-import com.healthcare.mgnt.service.DocumentManagementService;
+import com.healthcare.mgnt.dto.DocumentManagementRequest;
+import com.healthcare.mgnt.dto.DocumentManagementResponse;
+import com.healthcare.mgnt.service.Implementation.DocumentManagementService;
 import com.healthcare.mgnt.constants.ApplicationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,12 +38,17 @@ public class DocumentManagementController {
         @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<DocumentManagementResponseDTO>> getAllDocuments(@RequestParam(defaultValue = "0") int page,
-                                                                             @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
+    public ResponseEntity<Page<DocumentManagementResponse>> getAllDocuments(@RequestParam(defaultValue = "0") int page,
+                                                                            @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
         logger.info("Fetching all documents, page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<DocumentManagementResponseDTO> documents = documentManagementService.getAllDocuments(pageable);
-        return ResponseEntity.ok(documents);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<DocumentManagementResponse> documents = documentManagementService.getAllDocuments(pageable);
+            return ResponseEntity.ok(documents);
+        } catch (Exception ex) {
+            logger.error("Error fetching documents: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -55,10 +60,19 @@ public class DocumentManagementController {
         @ApiResponse(responseCode = "404", description = ApplicationConstants.DOCUMENT_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<DocumentManagementResponseDTO> getDocumentById(@PathVariable Long id) {
+    public ResponseEntity<DocumentManagementResponse> getDocumentById(@PathVariable Long id) {
         logger.info("Fetching document by id: {}", id);
-        DocumentManagementResponseDTO document = documentManagementService.getDocumentById(id);
-        return ResponseEntity.ok(document);
+        try {
+            DocumentManagementResponse document = documentManagementService.getDocumentById(id);
+            if (document == null) {
+                logger.warn("Document not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(document);
+        } catch (Exception ex) {
+            logger.error("Error fetching document by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -70,10 +84,15 @@ public class DocumentManagementController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PostMapping
-    public ResponseEntity<DocumentManagementResponseDTO> createDocument(@Validated @RequestBody DocumentManagementRequestDTO requestDTO) {
+    public ResponseEntity<DocumentManagementResponse> createDocument(@Validated @RequestBody DocumentManagementRequest requestDTO) {
         logger.info("Creating new document: {}", requestDTO.getFileName());
-        DocumentManagementResponseDTO createdDocument = documentManagementService.createDocument(requestDTO);
-        return ResponseEntity.status(201).body(createdDocument);
+        try {
+            DocumentManagementResponse createdDocument = documentManagementService.createDocument(requestDTO);
+            return ResponseEntity.status(201).body(createdDocument);
+        } catch (Exception ex) {
+            logger.error("Error creating document: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -86,10 +105,15 @@ public class DocumentManagementController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<DocumentManagementResponseDTO> updateDocument(@PathVariable Long id, @Validated @RequestBody DocumentManagementRequestDTO requestDTO) {
+    public ResponseEntity<DocumentManagementResponse> updateDocument(@PathVariable Long id, @Validated @RequestBody DocumentManagementRequest requestDTO) {
         logger.info("Updating document id: {}", id);
-        DocumentManagementResponseDTO updatedDocument = documentManagementService.updateDocument(id, requestDTO);
-        return ResponseEntity.ok(updatedDocument);
+        try {
+            DocumentManagementResponse updatedDocument = documentManagementService.updateDocument(id, requestDTO);
+            return ResponseEntity.ok(updatedDocument);
+        } catch (Exception ex) {
+            logger.error("Error updating document id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -103,7 +127,12 @@ public class DocumentManagementController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
         logger.info("Deleting document id: {}", id);
-        documentManagementService.deleteDocument(id);
-        return ResponseEntity.noContent().build();
+        try {
+            documentManagementService.deleteDocument(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting document id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

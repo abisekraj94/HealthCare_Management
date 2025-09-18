@@ -21,7 +21,8 @@ public enum AppErrorCodes {
     ALLERGY_NOT_FOUND("ALG-001", "Allergy not found", HttpStatus.NOT_FOUND),
     DIAGNOSIS_NOT_FOUND("DIAG-001", "Diagnosis not found", HttpStatus.NOT_FOUND),
     TOKEN_HAS_EXPIRED("TOK-001","Token has expired",HttpStatus.UNAUTHORIZED),
-    TOKEN_HAS_INVALID("TOK-002","Invalid token",HttpStatus.UNAUTHORIZED);
+    TOKEN_HAS_INVALID("TOK-002","Invalid token",HttpStatus.UNAUTHORIZED),
+    INTERNAL_ERROR("GEN-001", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String errorCode;
     private final String errorMessage;

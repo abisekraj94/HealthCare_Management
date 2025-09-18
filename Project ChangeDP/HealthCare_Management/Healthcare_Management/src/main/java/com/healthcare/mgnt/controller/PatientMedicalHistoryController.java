@@ -1,8 +1,8 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.dto.PatientMedicalHistoryRequestDTO;
-import com.healthcare.mgnt.dto.PatientMedicalHistoryResponseDTO;
-import com.healthcare.mgnt.service.PatientMedicalHistoryService;
+import com.healthcare.mgnt.dto.PatientMedicalHistoryRequest;
+import com.healthcare.mgnt.dto.PatientMedicalHistoryResponse;
+import com.healthcare.mgnt.service.Implementation.PatientMedicalHistoryService;
 import com.healthcare.mgnt.constants.ApplicationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,12 +38,17 @@ public class PatientMedicalHistoryController {
         @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<PatientMedicalHistoryResponseDTO>> getAllPatientMedicalHistories(@RequestParam(defaultValue = "0") int page,
-                                                                                              @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
+    public ResponseEntity<Page<PatientMedicalHistoryResponse>> getAllPatientMedicalHistories(@RequestParam(defaultValue = "0") int page,
+                                                                                             @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
         logger.info("Fetching all patient medical histories, page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PatientMedicalHistoryResponseDTO> histories = patientMedicalHistoryService.getAllPatientMedicalHistories(pageable);
-        return ResponseEntity.ok(histories);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<PatientMedicalHistoryResponse> histories = patientMedicalHistoryService.getAllPatientMedicalHistories(pageable);
+            return ResponseEntity.ok(histories);
+        } catch (Exception ex) {
+            logger.error("Error fetching patient medical histories: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -55,10 +60,19 @@ public class PatientMedicalHistoryController {
         @ApiResponse(responseCode = "404", description = ApplicationConstants.PATIENT_MEDICAL_HISTORY_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<PatientMedicalHistoryResponseDTO> getPatientMedicalHistoryById(@PathVariable Long id) {
+    public ResponseEntity<PatientMedicalHistoryResponse> getPatientMedicalHistoryById(@PathVariable Long id) {
         logger.info("Fetching patient medical history by id: {}", id);
-        PatientMedicalHistoryResponseDTO history = patientMedicalHistoryService.getPatientMedicalHistoryById(id);
-        return ResponseEntity.ok(history);
+        try {
+            PatientMedicalHistoryResponse history = patientMedicalHistoryService.getPatientMedicalHistoryById(id);
+            if (history == null) {
+                logger.warn("Patient medical history not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(history);
+        } catch (Exception ex) {
+            logger.error("Error fetching patient medical history by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -70,10 +84,15 @@ public class PatientMedicalHistoryController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PostMapping
-    public ResponseEntity<PatientMedicalHistoryResponseDTO> createPatientMedicalHistory(@Validated @RequestBody PatientMedicalHistoryRequestDTO requestDTO) {
+    public ResponseEntity<PatientMedicalHistoryResponse> createPatientMedicalHistory(@Validated @RequestBody PatientMedicalHistoryRequest requestDTO) {
         logger.info("Creating new patient medical history for patientId: {}", requestDTO.getPatientId());
-        PatientMedicalHistoryResponseDTO created = patientMedicalHistoryService.createPatientMedicalHistory(requestDTO);
-        return ResponseEntity.status(201).body(created);
+        try {
+            PatientMedicalHistoryResponse created = patientMedicalHistoryService.createPatientMedicalHistory(requestDTO);
+            return ResponseEntity.status(201).body(created);
+        } catch (Exception ex) {
+            logger.error("Error creating patient medical history: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -86,10 +105,15 @@ public class PatientMedicalHistoryController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<PatientMedicalHistoryResponseDTO> updatePatientMedicalHistory(@PathVariable Long id, @Validated @RequestBody PatientMedicalHistoryRequestDTO requestDTO) {
+    public ResponseEntity<PatientMedicalHistoryResponse> updatePatientMedicalHistory(@PathVariable Long id, @Validated @RequestBody PatientMedicalHistoryRequest requestDTO) {
         logger.info("Updating patient medical history id: {}", id);
-        PatientMedicalHistoryResponseDTO updated = patientMedicalHistoryService.updatePatientMedicalHistory(id, requestDTO);
-        return ResponseEntity.ok(updated);
+        try {
+            PatientMedicalHistoryResponse updated = patientMedicalHistoryService.updatePatientMedicalHistory(id, requestDTO);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            logger.error("Error updating patient medical history id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -103,7 +127,12 @@ public class PatientMedicalHistoryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePatientMedicalHistory(@PathVariable Long id) {
         logger.info("Deleting patient medical history id: {}", id);
-        patientMedicalHistoryService.deletePatientMedicalHistory(id);
-        return ResponseEntity.noContent().build();
+        try {
+            patientMedicalHistoryService.deletePatientMedicalHistory(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting patient medical history id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

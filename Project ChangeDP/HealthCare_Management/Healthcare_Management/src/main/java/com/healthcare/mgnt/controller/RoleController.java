@@ -1,8 +1,8 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.dto.RoleRequestDTO;
-import com.healthcare.mgnt.dto.RoleResponseDTO;
-import com.healthcare.mgnt.service.RoleService;
+import com.healthcare.mgnt.dto.RoleRequest;
+import com.healthcare.mgnt.dto.RoleResponse;
+import com.healthcare.mgnt.service.Implementation.RoleService;
 import com.healthcare.mgnt.constants.ApplicationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -35,15 +35,20 @@ public class RoleController {
     @Operation(summary = "Get all roles", description = "Returns a paginated list of roles")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = ApplicationConstants.SUCCESSFUL_OPERATION),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+        @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<RoleResponseDTO>> getAllRoles(@RequestParam(defaultValue = "0") int page,
-                                                           @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
+    public ResponseEntity<Page<RoleResponse>> getAllRoles(@RequestParam(defaultValue = "0") int page,
+                                                          @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
         logger.info("Fetching all roles, page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<RoleResponseDTO> roles = roleService.getAllRoles(pageable);
-        return ResponseEntity.ok(roles);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<RoleResponse> roles = roleService.getAllRoles(pageable);
+            return ResponseEntity.ok(roles);
+        } catch (Exception ex) {
+            logger.error("Error fetching roles: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -55,10 +60,19 @@ public class RoleController {
         @ApiResponse(responseCode = "404", description = ApplicationConstants.ROLE_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<RoleResponseDTO> getRoleById(@PathVariable Long id) {
+    public ResponseEntity<RoleResponse> getRoleById(@PathVariable Long id) {
         logger.info("Fetching role by id: {}", id);
-        RoleResponseDTO role = roleService.getRoleById(id);
-        return ResponseEntity.ok(role);
+        try {
+            RoleResponse role = roleService.getRoleById(id);
+            if (role == null) {
+                logger.warn("Role not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(role);
+        } catch (Exception ex) {
+            logger.error("Error fetching role by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -70,10 +84,15 @@ public class RoleController {
         @ApiResponse(responseCode = "400", description = "Validation error")
     })
     @PostMapping
-    public ResponseEntity<RoleResponseDTO> createRole(@Validated @RequestBody RoleRequestDTO requestDTO) {
+    public ResponseEntity<RoleResponse> createRole(@Validated @RequestBody RoleRequest requestDTO) {
         logger.info("Creating new role: {}", requestDTO.getName());
-        RoleResponseDTO created = roleService.createRole(requestDTO);
-        return ResponseEntity.status(201).body(created);
+        try {
+            RoleResponse created = roleService.createRole(requestDTO);
+            return ResponseEntity.status(201).body(created);
+        } catch (Exception ex) {
+            logger.error("Error creating role: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -86,10 +105,15 @@ public class RoleController {
         @ApiResponse(responseCode = "400", description = "Validation error")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<RoleResponseDTO> updateRole(@PathVariable Long id, @Validated @RequestBody RoleRequestDTO requestDTO) {
+    public ResponseEntity<RoleResponse> updateRole(@PathVariable Long id, @Validated @RequestBody RoleRequest requestDTO) {
         logger.info("Updating role id: {}", id);
-        RoleResponseDTO updated = roleService.updateRole(id, requestDTO);
-        return ResponseEntity.ok(updated);
+        try {
+            RoleResponse updated = roleService.updateRole(id, requestDTO);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            logger.error("Error updating role id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -103,7 +127,12 @@ public class RoleController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRole(@PathVariable Long id) {
         logger.info("Deleting role id: {}", id);
-        roleService.deleteRole(id);
-        return ResponseEntity.noContent().build();
+        try {
+            roleService.deleteRole(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting role id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

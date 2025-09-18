@@ -1,8 +1,8 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.dto.PatientIdentifierRequestDTO;
-import com.healthcare.mgnt.dto.PatientIdentifierResponseDTO;
-import com.healthcare.mgnt.service.PatientIdentifierService;
+import com.healthcare.mgnt.dto.PatientIdentifierRequest;
+import com.healthcare.mgnt.dto.PatientIdentifierResponse;
+import com.healthcare.mgnt.service.Implementation.PatientIdentifierService;
 import com.healthcare.mgnt.constants.ApplicationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,12 +38,17 @@ public class PatientIdentifierController {
         @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<PatientIdentifierResponseDTO>> getAllPatientIdentifiers(@RequestParam(defaultValue = "0") int page,
-                                                                                      @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
+    public ResponseEntity<Page<PatientIdentifierResponse>> getAllPatientIdentifiers(@RequestParam(defaultValue = "0") int page,
+                                                                                    @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
         logger.info("Fetching all patient identifiers, page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<PatientIdentifierResponseDTO> identifiers = patientIdentifierService.getAllPatientIdentifiers(pageable);
-        return ResponseEntity.ok(identifiers);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<PatientIdentifierResponse> identifiers = patientIdentifierService.getAllPatientIdentifiers(pageable);
+            return ResponseEntity.ok(identifiers);
+        } catch (Exception ex) {
+            logger.error("Error fetching patient identifiers: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -55,10 +60,19 @@ public class PatientIdentifierController {
         @ApiResponse(responseCode = "404", description = ApplicationConstants.PATIENT_IDENTIFIER_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<PatientIdentifierResponseDTO> getPatientIdentifierById(@PathVariable Long id) {
+    public ResponseEntity<PatientIdentifierResponse> getPatientIdentifierById(@PathVariable Long id) {
         logger.info("Fetching patient identifier by id: {}", id);
-        PatientIdentifierResponseDTO identifier = patientIdentifierService.getPatientIdentifierById(id);
-        return ResponseEntity.ok(identifier);
+        try {
+            PatientIdentifierResponse identifier = patientIdentifierService.getPatientIdentifierById(id);
+            if (identifier == null) {
+                logger.warn("Patient identifier not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(identifier);
+        } catch (Exception ex) {
+            logger.error("Error fetching patient identifier by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -70,10 +84,15 @@ public class PatientIdentifierController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PostMapping
-    public ResponseEntity<PatientIdentifierResponseDTO> createPatientIdentifier(@Validated @RequestBody PatientIdentifierRequestDTO requestDTO) {
+    public ResponseEntity<PatientIdentifierResponse> createPatientIdentifier(@Validated @RequestBody PatientIdentifierRequest requestDTO) {
         logger.info("Creating new patient identifier for patientId: {}", requestDTO.getPatientId());
-        PatientIdentifierResponseDTO created = patientIdentifierService.createPatientIdentifier(requestDTO);
-        return ResponseEntity.status(201).body(created);
+        try {
+            PatientIdentifierResponse created = patientIdentifierService.createPatientIdentifier(requestDTO);
+            return ResponseEntity.status(201).body(created);
+        } catch (Exception ex) {
+            logger.error("Error creating patient identifier: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -86,10 +105,15 @@ public class PatientIdentifierController {
         @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<PatientIdentifierResponseDTO> updatePatientIdentifier(@PathVariable Long id, @Validated @RequestBody PatientIdentifierRequestDTO requestDTO) {
+    public ResponseEntity<PatientIdentifierResponse> updatePatientIdentifier(@PathVariable Long id, @Validated @RequestBody PatientIdentifierRequest requestDTO) {
         logger.info("Updating patient identifier id: {}", id);
-        PatientIdentifierResponseDTO updated = patientIdentifierService.updatePatientIdentifier(id, requestDTO);
-        return ResponseEntity.ok(updated);
+        try {
+            PatientIdentifierResponse updated = patientIdentifierService.updatePatientIdentifier(id, requestDTO);
+            return ResponseEntity.ok(updated);
+        } catch (Exception ex) {
+            logger.error("Error updating patient identifier id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -103,7 +127,12 @@ public class PatientIdentifierController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePatientIdentifier(@PathVariable Long id) {
         logger.info("Deleting patient identifier id: {}", id);
-        patientIdentifierService.deletePatientIdentifier(id);
-        return ResponseEntity.noContent().build();
+        try {
+            patientIdentifierService.deletePatientIdentifier(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting patient identifier id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

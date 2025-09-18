@@ -1,9 +1,9 @@
 package com.healthcare.mgnt.controller;
 
-import com.healthcare.mgnt.dto.UserRequestDTO;
-import com.healthcare.mgnt.dto.UserResponseDTO;
-import com.healthcare.mgnt.repository.UserService;
+import com.healthcare.mgnt.dto.UserRequest;
+import com.healthcare.mgnt.dto.UserResponse;
 import com.healthcare.mgnt.constants.ApplicationConstants;
+import com.healthcare.mgnt.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,7 +27,7 @@ public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
-    private UserService userService;
+    private IUserService userService;
 
     /**
      * Get all users (paginated).
@@ -38,12 +38,17 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = ApplicationConstants.UNAUTHORIZED)
     })
     @GetMapping
-    public ResponseEntity<Page<UserResponseDTO>> getAllUsers(@RequestParam(defaultValue = "0") int page,
-                                                            @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
+    public ResponseEntity<Page<UserResponse>> getAllUsers(@RequestParam(defaultValue = "0") int page,
+                                                          @RequestParam(defaultValue = ApplicationConstants.DEFAULT_PAGE_SIZE) int size) {
         logger.info("Fetching all users, page: {}, size: {}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<UserResponseDTO> users = userService.getAllUsers(pageable);
-        return ResponseEntity.ok(users);
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<UserResponse> users = userService.getAllUsers(pageable);
+            return ResponseEntity.ok(users);
+        } catch (Exception ex) {
+            logger.error("Error fetching users: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -55,10 +60,19 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = ApplicationConstants.USER_NOT_FOUND)
     })
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         logger.info("Fetching user by id: {}", id);
-        UserResponseDTO user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
+        try {
+            UserResponse user = userService.getUserById(id);
+            if (user == null) {
+                logger.warn("User not found for id: {}", id);
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(user);
+        } catch (Exception ex) {
+            logger.error("Error fetching user by id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -70,10 +84,15 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PostMapping
-    public ResponseEntity<UserResponseDTO> createUser(@Validated @RequestBody UserRequestDTO userRequestDTO) {
-        logger.info("Creating new user: {}", userRequestDTO.getUsername());
-        UserResponseDTO createdUser = userService.createUser(userRequestDTO);
-        return ResponseEntity.status(201).body(createdUser);
+    public ResponseEntity<UserResponse> createUser(@Validated @RequestBody UserRequest userRequest) {
+        logger.info("Creating new user: {}", userRequest.getUsername());
+        try {
+            UserResponse createdUser = userService.createUser(userRequest);
+            return ResponseEntity.status(201).body(createdUser);
+        } catch (Exception ex) {
+            logger.error("Error creating user: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -86,10 +105,15 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = ApplicationConstants.VALIDATION_ERROR)
     })
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id, @Validated @RequestBody UserRequestDTO userRequestDTO) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Validated @RequestBody UserRequest userRequest) {
         logger.info("Updating user id: {}", id);
-        UserResponseDTO updatedUser = userService.updateUser(id, userRequestDTO);
-        return ResponseEntity.ok(updatedUser);
+        try {
+            UserResponse updatedUser = userService.updateUser(id, userRequest);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception ex) {
+            logger.error("Error updating user id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 
     /**
@@ -103,7 +127,12 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         logger.info("Deleting user id: {}", id);
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception ex) {
+            logger.error("Error deleting user id {}: {}", id, ex.getMessage(), ex);
+            return ResponseEntity.status(500).build();
+        }
     }
 }

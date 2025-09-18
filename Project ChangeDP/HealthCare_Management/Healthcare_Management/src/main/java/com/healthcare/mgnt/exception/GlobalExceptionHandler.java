@@ -23,6 +23,8 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles validation errors and returns field-specific messages.
+     * @param ex the MethodArgumentNotValidException thrown during validation
+     * @return ResponseEntity containing a map of field errors and HTTP 400 status
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException ex) {
@@ -35,6 +37,8 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles custom AppException and returns structured error response.
+     * @param ex the AppException thrown in the application
+     * @return ResponseEntity containing ApiErrorResponse and the appropriate HTTP status
      */
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiErrorResponse> handleAppException(AppException ex) {
@@ -46,6 +50,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles runtime exceptions and returns generic error response.
+     * @param ex the RuntimeException thrown in the application
+     * @param request the current web request
+     * @return ResponseEntity containing ApiErrorResponse and HTTP 400 status
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiErrorResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
@@ -56,6 +63,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Handles all other exceptions and returns internal server error response.
+     * @param ex the Exception thrown in the application
+     * @param request the current web request
+     * @return ResponseEntity containing ApiErrorResponse and HTTP 500 status
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGlobalException(Exception ex, WebRequest request) {

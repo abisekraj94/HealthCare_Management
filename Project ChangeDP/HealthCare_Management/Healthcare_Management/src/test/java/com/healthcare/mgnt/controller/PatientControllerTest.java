@@ -1,7 +1,7 @@
 package com.healthcare.mgnt.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.healthcare.mgnt.dto.PatientRequestDTO;
+import com.healthcare.mgnt.dto.PatientRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,7 +30,7 @@ public class PatientControllerTest {
     @Test
     void testTenantIsolationViaHeader() throws Exception {
         // Create patient for SIMS
-        PatientRequestDTO patientSims = new PatientRequestDTO();
+        PatientRequest patientSims = new PatientRequest();
         patientSims.setMrn("SIMS-001");
         patientSims.setFirstName("John");
         patientSims.setLastName("Doe");
@@ -43,7 +43,7 @@ public class PatientControllerTest {
                 .andExpect(status().isCreated());
 
         // Create patient for MIOT
-        PatientRequestDTO patientMiot = new PatientRequestDTO();
+        PatientRequest patientMiot = new PatientRequest();
         patientMiot.setMrn("MIOT-001");
         patientMiot.setFirstName("Jane");
         patientMiot.setLastName("Smith");
@@ -77,7 +77,7 @@ public class PatientControllerTest {
     @Test
     void testTenantDetectionViaRequestBody() throws Exception {
         // Create patient for APOLLO using tenant in body
-        PatientRequestDTO patientApollo = new PatientRequestDTO();
+        PatientRequest patientApollo = new PatientRequest();
         patientApollo.setMrn("APOLLO-001");
         patientApollo.setFirstName("Alice");
         patientApollo.setLastName("Wonderland");

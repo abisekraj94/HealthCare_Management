@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 import java.sql.Date;
 
 /**
@@ -13,6 +14,7 @@ import java.sql.Date;
  * Stores details about the medication, dosage, frequency, route, prescription dates, and prescriber.
  */
 @Entity
+@Audited
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

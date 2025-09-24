@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 import java.sql.Timestamp;
 
@@ -19,6 +20,7 @@ import java.sql.Timestamp;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Audited
 @Table(name = "document_management")
 public class DocumentManagement extends Auditable {
     /** Unique identifier for the document. */

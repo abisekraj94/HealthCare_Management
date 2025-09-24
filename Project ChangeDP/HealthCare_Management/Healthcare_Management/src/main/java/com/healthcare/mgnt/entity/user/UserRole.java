@@ -5,12 +5,14 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 /**
  * Entity representing the mapping between users and roles in the HealthCare Management System.
  * Associates a user with a specific role for access control purposes.
  */
 @Entity
+@Audited
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
+import org.hibernate.envers.Audited;
 
 /**
  * Entity representing a user in the HealthCare Management System.
@@ -18,6 +19,7 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Audited
 public class User extends Auditable {
     /** Unique identifier for the user. */
     @Id

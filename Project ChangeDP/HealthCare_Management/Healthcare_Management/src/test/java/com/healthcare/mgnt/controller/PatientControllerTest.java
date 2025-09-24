@@ -5,6 +5,11 @@ import com.healthcare.mgnt.dto.request.PatientRequest;
 import com.healthcare.mgnt.dto.response.PatientResponse;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,28 +17,27 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.mockito.Mockito;
-import org.mockito.ArgumentMatchers;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import com.healthcare.mgnt.security.TestSecurityConfig;
-import com.healthcare.mgnt.service.Implementation.patient.PatientService;
 
+import com.healthcare.mgnt.service.Implementation.patient.PatientService;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @Data
 @ActiveProfiles("test")
-@Import({TestSecurityConfig.class, PatientControllerTest.MockConfig.class, PatientControllerTest.SecurityTestConfig.class})
+@Import({PatientControllerTest.TestAuthConfig.class, PatientControllerTest.TestSecurityConfig.class, PatientControllerTest.MockPatientServiceConfig.class})
 public class PatientControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -42,20 +46,9 @@ public class PatientControllerTest {
     @Autowired
     private PatientService patientService;
 
-    @TestConfiguration
-    static class MockConfig {
-        @Bean
-        public PatientService patientService() {
-            return Mockito.mock(PatientService.class);
-        }
-    }
-
-    @TestConfiguration
-    static class SecurityTestConfig {
-        @Bean
-        public AuthenticationManager authenticationManager() {
-            return authentication -> authentication;
-        }
+    @BeforeEach
+    void setUp() {
+        Mockito.reset(patientService);
     }
 
     @Test
@@ -74,6 +67,15 @@ public class PatientControllerTest {
         patientSims.setReferralPhysicianId(2L);
         PatientResponse simsResponseObj = new PatientResponse();
         simsResponseObj.setMrn("SIMS-001");
+        simsResponseObj.setFirstName("John");
+        simsResponseObj.setLastName("Doe");
+        simsResponseObj.setDob(new java.sql.Date(System.currentTimeMillis()));
+        simsResponseObj.setGender("Male");
+        simsResponseObj.setPhone("1234567890");
+        simsResponseObj.setEmail("john.doe@example.com");
+        simsResponseObj.setAddress("123 Main St");
+        simsResponseObj.setPrimaryPhysicianId(1L);
+        simsResponseObj.setReferralPhysicianId(2L);
 
         // Create patient for MIOT
         PatientRequest patientMiot = new PatientRequest();
@@ -89,8 +91,17 @@ public class PatientControllerTest {
         patientMiot.setReferralPhysicianId(4L);
         PatientResponse miotResponseObj = new PatientResponse();
         miotResponseObj.setMrn("MIOT-001");
+        miotResponseObj.setFirstName("Jane");
+        miotResponseObj.setLastName("Smith");
+        miotResponseObj.setDob(new java.sql.Date(System.currentTimeMillis()));
+        miotResponseObj.setGender("Female");
+        miotResponseObj.setPhone("0987654321");
+        miotResponseObj.setEmail("jane.smith@example.com");
+        miotResponseObj.setAddress("456 Main St");
+        miotResponseObj.setPrimaryPhysicianId(3L);
+        miotResponseObj.setReferralPhysicianId(4L);
 
-        // Use thenAnswer to return correct patient list based on tenant header
+        // Mock createPatient for both tenants
         Mockito.when(patientService.createPatient(ArgumentMatchers.any(PatientRequest.class)))
             .thenAnswer(invocation -> {
                 PatientRequest req = invocation.getArgument(0);
@@ -101,17 +112,18 @@ public class PatientControllerTest {
                 }
                 return null;
             });
+        // Mock getAllPatients for both tenants
         Mockito.when(patientService.getAllPatients(ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt()))
             .thenAnswer(invocation -> {
                 ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
                 String tenant = attrs != null && attrs.getRequest().getHeader("X-Tenant-ID") != null ?
                     attrs.getRequest().getHeader("X-Tenant-ID") : "";
                 if ("SIMS".equals(tenant)) {
-                    return new PageImpl<>(java.util.Collections.singletonList(simsResponseObj), PageRequest.of(0, 10), 1);
+                    return java.util.Collections.singletonList(simsResponseObj);
                 } else if ("MIOT".equals(tenant)) {
-                    return new PageImpl<>(java.util.Collections.singletonList(miotResponseObj), PageRequest.of(0, 10), 1);
+                    return java.util.Collections.singletonList(miotResponseObj);
                 }
-                return new PageImpl<>(java.util.Collections.emptyList(), PageRequest.of(0, 10), 0);
+                return java.util.Collections.emptyList();
             });
         String simsJson = objectMapper.writeValueAsString(patientSims);
         String miotJson = objectMapper.writeValueAsString(patientMiot);
@@ -163,9 +175,28 @@ public class PatientControllerTest {
         patientApollo.setReferralPhysicianId(6L);
         PatientResponse apolloResponseObj = new PatientResponse();
         apolloResponseObj.setMrn("APOLLO-001");
+        apolloResponseObj.setFirstName("Alice");
+        apolloResponseObj.setLastName("Wonderland");
+        apolloResponseObj.setDob(new java.sql.Date(System.currentTimeMillis()));
+        apolloResponseObj.setGender("Female");
+        apolloResponseObj.setPhone("1112223333");
+        apolloResponseObj.setEmail("alice.wonderland@example.com");
+        apolloResponseObj.setAddress("789 Main St");
+        apolloResponseObj.setPrimaryPhysicianId(5L);
+        apolloResponseObj.setReferralPhysicianId(6L);
+        // Mock createPatient for APOLLO
         Mockito.when(patientService.createPatient(ArgumentMatchers.any(PatientRequest.class))).thenReturn(apolloResponseObj);
-//        Mockito.when(patientService.getAllPatients(ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt()))
-//            .thenReturn(new PageImpl<>(java.util.Collections.singletonList(apolloResponseObj), PageRequest.of(0, 10), 1));
+        // Mock getAllPatients for APOLLO
+        Mockito.when(patientService.getAllPatients(ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt()))
+            .thenAnswer(invocation -> {
+                ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                String tenant = attrs != null && attrs.getRequest().getHeader("X-Tenant-ID") != null ?
+                    attrs.getRequest().getHeader("X-Tenant-ID") : "";
+                if ("APOLLO".equals(tenant)) {
+                    return java.util.Collections.singletonList(apolloResponseObj);
+                }
+                return java.util.Collections.emptyList();
+            });
         String apolloJson = objectMapper.createObjectNode()
                 .put("mrn", patientApollo.getMrn())
                 .put("firstName", patientApollo.getFirstName())
@@ -192,5 +223,29 @@ public class PatientControllerTest {
                 .andReturn();
         String apolloResponse = resultApollo.getResponse().getContentAsString();
         assertThat(apolloResponse).contains("APOLLO-001");
+    }
+
+    @TestConfiguration
+    static class TestAuthConfig {
+        @Bean
+        public AuthenticationManager authenticationManager() {
+            return authentication -> authentication;
+        }
+    }
+    @TestConfiguration
+    static class TestSecurityConfig {
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+            http.csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(authz -> authz.anyRequest().permitAll());
+            return http.build();
+        }
+    }
+    @TestConfiguration
+    static class MockPatientServiceConfig {
+        @Bean
+        public PatientService patientService() {
+            return Mockito.mock(PatientService.class);
+        }
     }
 }

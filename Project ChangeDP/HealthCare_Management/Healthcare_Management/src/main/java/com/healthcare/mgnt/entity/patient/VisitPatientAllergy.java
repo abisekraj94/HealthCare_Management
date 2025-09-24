@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 /**
  * Entity representing an allergy recorded during a patient's visit in the HealthCare Management System.
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Audited
 @Table(name = "visit_patient_allergy")
 public class VisitPatientAllergy extends Auditable {
     /** Unique identifier for the allergy record. */

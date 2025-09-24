@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 import java.sql.Timestamp;
 
@@ -13,6 +14,7 @@ import java.sql.Timestamp;
  * Stores measurements such as temperature, blood pressure, heart rate, and respiratory rate for a patient.
  */
 @Entity
+@Audited
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

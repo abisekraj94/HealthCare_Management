@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 import java.sql.Date;
 
@@ -16,6 +17,7 @@ import java.sql.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Audited
 @Table(name = "patient_medical_history")
 public class PatientMedicalHistory extends Auditable {
     /** Unique identifier for the medical history record. */

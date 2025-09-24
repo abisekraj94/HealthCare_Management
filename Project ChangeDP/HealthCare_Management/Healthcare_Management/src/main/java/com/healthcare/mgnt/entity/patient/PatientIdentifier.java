@@ -5,12 +5,14 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 /**
  * Entity representing a unique identifier for a patient (e.g., insurance number, government ID).
  * Associates an identifier type and value with a patient in the HealthCare Management System.
  */
 @Entity
+@Audited
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

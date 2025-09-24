@@ -2,12 +2,20 @@ package com.healthcare.mgnt;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
 
 @SpringBootTest
-class ProductApplicationTests {
-
-	@Test
-	void contextLoads() {
-	}
-
+public class ProductApplicationTests {
+    @TestConfiguration
+    static class SecurityTestConfig {
+        @Bean
+        public AuthenticationManager authenticationManager() {
+            return authentication -> authentication;
+        }
+    }
+    @Test
+    void contextLoads() {
+    }
 }

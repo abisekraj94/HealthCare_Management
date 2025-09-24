@@ -9,7 +9,6 @@ public class ApplicationConstants {
     public static final String DEFAULT_PAGE_SIZE = "10";
 
     // Error Messages
-    public static final String MEDICATION_NOT_FOUND = "Visit patient medication not found";
     public static final String VISIT_NOT_FOUND = "Patient visit not found";
     public static final String USER_NOT_FOUND = "User not found";
     public static final String PATIENT_NOT_FOUND = "Patient not found";

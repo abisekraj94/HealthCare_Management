@@ -3,9 +3,11 @@ import com.healthcare.mgnt.constants.AppErrorCodes;
 import com.healthcare.mgnt.exception.AuthException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
@@ -13,23 +15,14 @@ import java.util.List;
 /**
  * Utility class for JWT token operations
  * Handles token generation, validation, and extraction of claims
- *
- * @author User Management Team
- * @version 1.0
  */
 @Component
-@Slf4j
 public class JwtUtil {
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
     private final SecretKey secretKey;
     private final long jwtExpiration;
 
-    /**
-     * Constructor to initialize JWT utility with secret and expiration
-     *
-     * @param secret the JWT secret key
-     * @param expiration the JWT expiration time in milliseconds
-     */
     public JwtUtil(@Value("${jwt.secret}") String secret,
                    @Value("${jwt.expiration}") long expiration) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
@@ -47,6 +40,7 @@ public class JwtUtil {
     public String generateToken(Long userId, String email, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
+
         return Jwts.builder()
                 .setSubject(email)
                 .claim("userId", userId)
@@ -108,24 +102,6 @@ public class JwtUtil {
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Invalid JWT token: {}", e.getMessage());
             throw new AuthException(AppErrorCodes.TOKEN_HAS_INVALID);
-        }
-    }
-
-    /**
-     * Check if JWT token is valid
-     *
-     * @param token the JWT token
-     * @return true if valid, false otherwise
-     */
-    public boolean isTokenValid(String token) {
-        try {
-            Claims claims = getClaimsFromToken(token);
-            if (claims.getExpiration().before(new Date())) {
-                return false;
-            }
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return false;
         }
     }
 

@@ -5,9 +5,11 @@ import org.springframework.http.HttpStatus;
 
 /**
  * Application-wide error codes for structured error responses in HealthCare Management System.
+ * credentials
  */
 @Getter
 public enum AppErrorCodes {
+    INVALID_USER_CREDENTIALS("AUTH-001", "Invalid Username or Password", HttpStatus.ACCEPTED),
     USER_NOT_FOUND("USER-003", "User not found", HttpStatus.ACCEPTED),
     ROLE_NOT_FOUND("ROLE-001", "Role not found", HttpStatus.ACCEPTED),
     PATIENT_NOT_FOUND("PAT-001", "Patient not found", HttpStatus.NOT_FOUND),
@@ -22,7 +24,8 @@ public enum AppErrorCodes {
     DIAGNOSIS_NOT_FOUND("DIAG-001", "Diagnosis not found", HttpStatus.NOT_FOUND),
     TOKEN_HAS_EXPIRED("TOK-001","Token has expired",HttpStatus.UNAUTHORIZED),
     TOKEN_HAS_INVALID("TOK-002","Invalid token",HttpStatus.UNAUTHORIZED),
-    INTERNAL_ERROR("GEN-001", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
+    GENERIC_ERROR_CODE("GEN-001", "We’re unable to process your request right now. Please try again later", HttpStatus.INTERNAL_SERVER_ERROR),
+    MEDICATION_NOT_FOUND("MED-001", "Visit patient medication not found", HttpStatus.NOT_FOUND);
 
     private final String errorCode;
     private final String errorMessage;

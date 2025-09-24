@@ -13,6 +13,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import com.healthcare.mgnt.exception.AuthException;
 
 /**
  * JwtAuthenticationFilter is a Spring Security filter that intercepts HTTP requests
@@ -54,11 +55,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Validate token and set authentication context if valid
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtUtil.isTokenValid(token)) {
+            try {
+                jwtUtil.validateToken(token);
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+            } catch (AuthException e) {
+                // Token is invalid or expired, do not set authentication
             }
         }
         // Continue with the filter chain

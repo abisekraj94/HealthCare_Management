@@ -1,0 +1,38 @@
+version: '3.7'
+services:
+  elasticsearch:
+    image: docker.io/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  logstash:
+    image: docker.io/logstash:8.11.0
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - logs:/logs
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.io/kibana:8.11.0
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  healthcare-app:
+    build: .
+    volumes:
+      - logs:/logs
+    depends_on:
+      - logstash
+
+volumes:
+  esdata:
+  logs:
+

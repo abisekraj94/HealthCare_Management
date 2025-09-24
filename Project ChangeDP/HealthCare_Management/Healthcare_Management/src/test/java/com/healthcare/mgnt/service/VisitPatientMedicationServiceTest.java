@@ -1,15 +1,15 @@
 package com.healthcare.mgnt.service;
 
-import com.healthcare.mgnt.dto.VisitPatientMedicationRequest;
-import com.healthcare.mgnt.dto.VisitPatientMedicationResponse;
-import com.healthcare.mgnt.entity.VisitPatientMedication;
-import com.healthcare.mgnt.entity.PatientVisit;
-import com.healthcare.mgnt.entity.User;
-import com.healthcare.mgnt.repository.VisitPatientMedicationRepository;
-import com.healthcare.mgnt.repository.PatientVisitRepository;
-import com.healthcare.mgnt.repository.UserRepository;
-import com.healthcare.mgnt.exception.MedicationNotFoundException;
-import com.healthcare.mgnt.service.Implementation.VisitPatientMedicationService;
+import com.healthcare.mgnt.dto.request.VisitPatientMedicationRequest;
+import com.healthcare.mgnt.dto.response.VisitPatientMedicationResponse;
+import com.healthcare.mgnt.entity.patient.VisitPatientMedication;
+import com.healthcare.mgnt.entity.patient.PatientVisit;
+import com.healthcare.mgnt.entity.user.User;
+import com.healthcare.mgnt.repository.patient.VisitPatientMedicationRepository;
+import com.healthcare.mgnt.repository.patient.PatientVisitRepository;
+import com.healthcare.mgnt.repository.user.UserRepository;
+import com.healthcare.mgnt.exception.MedicationException;
+import com.healthcare.mgnt.service.Implementation.patient.VisitPatientMedicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -127,7 +127,7 @@ class VisitPatientMedicationServiceTest {
     @Test
     void testGetVisitPatientMedicationById_NotFound() {
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(MedicationNotFoundException.class, () -> service.getVisitPatientMedicationById(99L));
+        assertThrows(MedicationException.class, () -> service.getVisitPatientMedicationById(99L));
     }
 
     @Test
@@ -180,7 +180,7 @@ class VisitPatientMedicationServiceTest {
     void testUpdateVisitPatientMedication_NotFound() {
         VisitPatientMedicationRequest req = new VisitPatientMedicationRequest();
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(MedicationNotFoundException.class, () -> service.updateVisitPatientMedication(99L, req));
+        assertThrows(MedicationException.class, () -> service.updateVisitPatientMedication(99L, req));
     }
 
     @Test
@@ -193,6 +193,6 @@ class VisitPatientMedicationServiceTest {
     @Test
     void testDeleteVisitPatientMedication_NotFound() {
         when(medicationRepository.existsById(99L)).thenReturn(false);
-        assertThrows(MedicationNotFoundException.class, () -> service.deleteVisitPatientMedication(99L));
+        assertThrows(MedicationException.class, () -> service.deleteVisitPatientMedication(99L));
     }
 }

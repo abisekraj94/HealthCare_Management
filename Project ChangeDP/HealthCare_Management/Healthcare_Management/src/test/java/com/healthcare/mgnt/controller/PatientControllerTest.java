@@ -1,8 +1,10 @@
 package com.healthcare.mgnt.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.healthcare.mgnt.dto.request.PatientRequest;
 import com.healthcare.mgnt.dto.response.PatientResponse;
+import com.healthcare.mgnt.security.JwtAuthenticationFilter;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -37,7 +41,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @AutoConfigureMockMvc
 @Data
 @ActiveProfiles("test")
-@Import({PatientControllerTest.TestAuthConfig.class, PatientControllerTest.TestSecurityConfig.class, PatientControllerTest.MockPatientServiceConfig.class})
+@Import({PatientControllerTest.TestAuthConfig.class, PatientControllerTest.TestSecurityConfig.class, PatientControllerTest.MockPatientServiceConfig.class, PatientControllerTest.MockJwtAuthenticationFilterConfig.class})
 public class PatientControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -46,9 +50,15 @@ public class PatientControllerTest {
     @Autowired
     private PatientService patientService;
 
+    private MockMvc standaloneMockMvc;
+
     @BeforeEach
     void setUp() {
         Mockito.reset(patientService);
+        // Standalone setup for proper serialization
+        standaloneMockMvc = MockMvcBuilders.standaloneSetup(new com.healthcare.mgnt.controller.patient.PatientController(patientService))
+            .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+            .build();
     }
 
     @Test
@@ -141,22 +151,42 @@ public class PatientControllerTest {
                 .andExpect(status().isOk());
 
         // Fetch patients for SIMS
-        MvcResult resultSims = mockMvc.perform(get("/api/patients")
-                .header("X-Tenant-ID", "SIMS"))
+        MvcResult resultSims = standaloneMockMvc.perform(get("/api/patients")
+                .header("X-Tenant-ID", "SIMS")
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
         String simsResponse = resultSims.getResponse().getContentAsString();
-        assertThat(simsResponse).contains("SIMS-001");
-        assertThat(simsResponse).doesNotContain("MIOT-001");
+        assertThat(simsResponse).as("Controller returned empty response body for SIMS patient fetch.").isNotBlank();
+        com.fasterxml.jackson.databind.JsonNode simsJsonNode = objectMapper.readTree(simsResponse);
+        JsonNode simsDataNode = simsJsonNode.get("data");
+        String simsText;
+        if (simsDataNode != null && !simsDataNode.isNull()) {
+            simsText = simsDataNode.toString();
+        } else {
+            simsText = simsJsonNode.toString();
+        }
+        assertThat(simsText).contains("SIMS-001");
+        assertThat(simsText).doesNotContain("MIOT-001");
 
         // Fetch patients for MIOT
-        MvcResult resultMiot = mockMvc.perform(get("/api/patients")
-                .header("X-Tenant-ID", "MIOT"))
+        MvcResult resultMiot = standaloneMockMvc.perform(get("/api/patients")
+                .header("X-Tenant-ID", "MIOT")
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
         String miotResponse = resultMiot.getResponse().getContentAsString();
-        assertThat(miotResponse).contains("MIOT-001");
-        assertThat(miotResponse).doesNotContain("SIMS-001");
+        assertThat(miotResponse).as("Controller returned empty response body for MIOT patient fetch.").isNotBlank();
+        com.fasterxml.jackson.databind.JsonNode miotJsonNode = objectMapper.readTree(miotResponse);
+        JsonNode miotDataNode = miotJsonNode.get("data");
+        String miotText;
+        if (miotDataNode != null && !miotDataNode.isNull()) {
+            miotText = miotDataNode.toString();
+        } else {
+            miotText = miotJsonNode.toString();
+        }
+        assertThat(miotText).contains("MIOT-001");
+        assertThat(miotText).doesNotContain("SIMS-001");
     }
 
     @Test
@@ -217,12 +247,22 @@ public class PatientControllerTest {
                 .andExpect(status().isOk());
 
         // Fetch patients for APOLLO
-        MvcResult resultApollo = mockMvc.perform(get("/api/patients")
-                .header("X-Tenant-ID", "APOLLO"))
+        MvcResult resultApollo = standaloneMockMvc.perform(get("/api/patients")
+                .header("X-Tenant-ID", "APOLLO")
+                .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
         String apolloResponse = resultApollo.getResponse().getContentAsString();
-        assertThat(apolloResponse).contains("APOLLO-001");
+        assertThat(apolloResponse).as("Controller returned empty response body for APOLLO patient fetch.").isNotBlank();
+        com.fasterxml.jackson.databind.JsonNode apolloJsonNode = objectMapper.readTree(apolloResponse);
+        JsonNode apolloDataNode = apolloJsonNode.get("data");
+        String apolloText;
+        if (apolloDataNode != null && !apolloDataNode.isNull()) {
+            apolloText = apolloDataNode.toString();
+        } else {
+            apolloText = apolloJsonNode.toString();
+        }
+        assertThat(apolloText).contains("APOLLO-001");
     }
 
     @TestConfiguration
@@ -246,6 +286,13 @@ public class PatientControllerTest {
         @Bean
         public PatientService patientService() {
             return Mockito.mock(PatientService.class);
+        }
+    }
+    @TestConfiguration
+    static class MockJwtAuthenticationFilterConfig {
+        @Bean
+        public JwtAuthenticationFilter jwtAuthenticationFilter() {
+            return org.mockito.Mockito.mock(JwtAuthenticationFilter.class);
         }
     }
 }

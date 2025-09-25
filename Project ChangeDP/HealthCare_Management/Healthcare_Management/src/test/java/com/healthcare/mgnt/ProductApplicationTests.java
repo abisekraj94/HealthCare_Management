@@ -1,5 +1,6 @@
 package com.healthcare.mgnt;
 
+import com.healthcare.mgnt.security.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -13,6 +14,10 @@ public class ProductApplicationTests {
         @Bean
         public AuthenticationManager authenticationManager() {
             return authentication -> authentication;
+        }
+        @Bean
+        public JwtAuthenticationFilter jwtAuthenticationFilter() {
+            return org.mockito.Mockito.mock(JwtAuthenticationFilter.class);
         }
     }
     @Test

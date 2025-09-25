@@ -4,6 +4,7 @@ import com.multitenantlib.context.TenantContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -91,6 +92,7 @@ public class DataSourceConfig {
      * Configures the EntityManagerFactory for JPA operations.
      * @return LocalContainerEntityManagerFactoryBean instance
      */
+    @Primary
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
@@ -98,12 +100,22 @@ public class DataSourceConfig {
         em.setPackagesToScan("com.healthcare.mgnt.entity");
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
-        em.setJpaPropertyMap(Map.of(
-            "hibernate.hbm2ddl.auto", env.getProperty("spring.jpa.hibernate.ddl-auto", "update"),
-            "hibernate.dialect", env.getProperty("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQLDialect"),
-            "hibernate.show_sql", env.getProperty("spring.jpa.show-sql", "true"),
-            "hibernate.format_sql", env.getProperty("spring.jpa.properties.hibernate.format_sql", "true")
-        ));
+        Map<String, Object> jpaProperties = new HashMap<>();
+        // Fix: handle missing property source gracefully
+        Object propertySourceObj = ((org.springframework.core.env.AbstractEnvironment) env).getPropertySources().stream()
+                .filter(ps -> ps.getName().contains("applicationConfig: [classpath:/application.properties]"))
+                .findFirst()
+                .map(ps -> ps.getSource())
+                .orElse(null);
+        if (propertySourceObj instanceof Map) {
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) propertySourceObj).entrySet()) {
+                if (entry.getKey().startsWith("spring.jpa.properties.")) {
+                    jpaProperties.put(entry.getKey().replace("spring.jpa.properties.", ""), entry.getValue());
+                }
+            }
+        }
+        jpaProperties.put("hibernate.jdbc.lob.non_contextual_creation", "true");
+        em.setJpaPropertyMap(jpaProperties);
         return em;
     }
 

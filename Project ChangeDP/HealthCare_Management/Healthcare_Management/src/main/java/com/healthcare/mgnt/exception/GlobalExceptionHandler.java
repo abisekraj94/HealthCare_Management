@@ -1,24 +1,19 @@
 package com.healthcare.mgnt.exception;
 
-import com.healthcare.mgnt.constants.AppErrorCodes;
 import com.healthcare.mgnt.dto.common.BaseResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Global exception handler for HealthCare Management System.
  * Handles validation, custom, and generic exceptions with structured error responses.
  */
-@ControllerAdvice
+@RestControllerAdvice(basePackages = {"com.healthcare.mgnt.controller", "com.healthcare.mgnt.service"})
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 

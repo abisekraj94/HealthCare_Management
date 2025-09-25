@@ -46,6 +46,6 @@ public class PatientVisit extends Auditable {
     private User physician;
 
     /** Additional notes about the visit. */
-    @Column(name = "notes")
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 }

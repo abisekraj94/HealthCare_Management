@@ -36,7 +36,8 @@ public class PatientMedicalHistory extends Auditable {
     private String condition;
 
     /** Description or notes about the medical condition. */
-    @Column(name = "description")
+    @Lob
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     /** Date when the condition was diagnosed. */

@@ -1,19 +1,18 @@
 package com.healthcare.mgnt.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.web.filter.OncePerRequestFilter;
+import com.healthcare.mgnt.exception.AuthException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
-import com.healthcare.mgnt.exception.AuthException;
 
 /**
  * JwtAuthenticationFilter is a Spring Security filter that intercepts HTTP requests
@@ -22,12 +21,14 @@ import com.healthcare.mgnt.exception.AuthException;
  * This filter extracts the JWT token from the Authorization header, validates it,
  * and sets the authenticated user in the SecurityContext if the token is valid.
  */
-@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    @Autowired
-    private JwtUtil jwtUtil;
-    @Autowired
-    private UserDetailsService userDetailsService;
+    private final JwtUtil jwtUtil;
+    private final UserDetailsService userDetailsService;
+
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
 
     /**
      * Filters incoming HTTP requests to authenticate users based on JWT tokens.
@@ -67,5 +68,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         // Continue with the filter chain
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/") ||
+               path.startsWith("/api/v1/users/health") ||
+               path.startsWith("/swagger-ui") ||
+               path.equals("/swagger-ui.html") ||
+               path.equals("/swagger-ui/index.html") ||
+               path.startsWith("/v3/api-docs") ||
+               path.equals("/v3/api-docs/swagger-config") ||
+               path.startsWith("/swagger-resources") ||
+               path.startsWith("/webjars");
     }
 }

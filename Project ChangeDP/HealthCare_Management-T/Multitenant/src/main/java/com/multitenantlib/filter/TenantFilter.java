@@ -57,10 +57,10 @@ public class TenantFilter implements Filter {
                         logger.info("Tenant found: {}. Setting context to schema: {}", t.getIdentifier(), t.getSchema());
                         TenantContext.setCurrentTenant(t.getSchema());
                     },
-                    () -> logger.warn("Tenant not found for identifier: {}", id)
+                    () -> logger.error("Tenant not found for identifier: {}", id)
                 );
             } else {
-                logger.warn("No tenant identifier resolved for request URI: {}", request.getRequestURI());
+                logger.error("No tenant identifier resolved for request URI: {}", request.getRequestURI());
             }
             chain.doFilter(request, response);
         } catch (Exception e) {
